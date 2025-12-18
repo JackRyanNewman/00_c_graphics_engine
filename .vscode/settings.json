@@ -1,0 +1,21 @@
+{
+	"editor.aiStats.enabled": false,	
+	// "window.zoomLevel": 1,
+  // "editor.fontSize": 14,
+  //"workbench.tree.renderIndentGuides": "none",
+
+	"workbench.tree.indent": 15,
+	"explorer.compactFolders": true,
+	"explorer.sortOrder": "filesFirst",
+  "vscode_custom_css.imports": ["file:///C:/Users/Kilic/Desktop/CS_Folders/MTH/.vscode/style_settings.css"],
+  "workbench.tree.renderIndentGuides": "always",
+
+		
+}
+  
+
+//   "workbench.colorCustomizations": {
+//     "list.activeSelectionBackground": "#264f7800",
+//     "list.inactiveSelectionBackground": "#264f7800",
+//     "list.hoverBackground": "#264f7800"
+// }

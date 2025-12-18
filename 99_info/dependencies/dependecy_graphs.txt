@@ -1,0 +1,95 @@
+
+
+Bare-bones dependencies
+  main.c                  0-→ Create window, call engine_run()
+  ├── engine.c            1-→ Initialize subsystems, main loop
+  │   ├── renderer.c        2-→ Setup OpenGL, render current scene
+  │   │   ├── shader.c          3-→ Compile/link shaders
+  │   │   └── camera.c          3-→ View/projection matrices
+  │   ├── scene.c           2-→ Manage object list, updates
+  │   │   └── object3d.c        3-→ Individual object transforms
+  │   ├── input.c           2-→ Process keyboard/mouse
+  │   └── geometry.c        2-→ Vertex data definitions
+  └── math3d.c            1-→ Pure math (no dependencies)
+
+
+
+Convient Viewer 
+ main.c                → Create window, call engine_run()
+ engine.c              → Initialize subsystems, main loop
+ ├── renderer.c        → Setup OpenGL, render current scene
+     [shader, geo, camera[scene, math3d]]
+     ├── shader.c          → Compile/link shaders
+     └── camera.c          → View/projection matrices
+ 
+
+♦ File name
+->        | a chain of header references. 
+○  []     | Current header file imports
+•  [], <> | Current c file imports and functions called related to thing. 
+
+
+
+main[engine]
+  ├─○ [Engine]
+  ├─• [], <init, run, cleanup>
+  ♦ Engine: 
+  ├─○ [GLFW, GL, stdio.h, stdlib.h, stdbool.h, omp.h]
+  ├─• [renderer, input, scene, Engine], <engine functions> 
+  ├─♦Input     
+  |    ├─○ [GLFW], 
+  |    ├─• [GL,Input], <input_framebuffer_callbac> 
+  ├─♦Scene   
+  |    ├─○ [object3d] -> math3d.h -> math
+  |    ├─• [OMP,Scene],   <init, update, cleanup>
+  ├─♦Render 
+      ├─○ [GL, stdbool.h]  
+      ├─• [camera, shader, scene, object,geo, render], =<init,frame<scene>,cleanup>
+      ├─♦shader    
+      |    ├─○ [stdio.h]
+      |    ├─• [GL,shader], <shader_create_program>
+      ├─♦Geomtery
+      |    ├─○ [None]
+      |    ├─• [GL,Geomtery], <geometry_create_cube>
+      ├─♦Scene    
+      |   ├─○ [object3d] -> math3d.h -> math  
+      |   ├─• [OMP,Scene], <(scene_get_objects, scene_get_object_count)>
+      ├─♦Object
+      | ├─○ [math3d] -> math
+      | ├─• [Object3d], <object3d_get_model_matrix>
+      ├─♦Camera
+          ├─○ [math3d.h] -> math       
+          ├─• [Scene,Camera], <camera_get_view_matrix, camera_get_projection_matrix> 
+          ├─♦Scene    
+              ├─○ [object3d] -> math3d.h -> math  
+              ├─• [OMP,Scene], <G_WINDOW_WIDTH, GLOBAL_WINDOW_HEIGHT> 
+ 
+
+
+Engine 
+`
+
+•>Engine
+  ├──>renderer
+  │  ├────> shader 
+  │  ├────> geometry 
+  │  ├────> Camera
+  │  │
+  ├──┼─>scene_loader?
+         
+
+
+Main: Main calls engine methods, init, run and cleanup()
+ 1. engine_init(): 
+   Summary: 
+    > Calls RenderInit to load shaders, geometry into GPU, intilizes camera globals
+    > Then calls scene init to intilize objects, postions and meta data
+   Functions:  
+    > RenderInit -> creates shaders, geometry_create_cube, camera_init
+    > SceneInit  -> 
+  
+ 2. Engine-Run
+ 
+ 3. Calss engine cleanup()
+Engine: 
+

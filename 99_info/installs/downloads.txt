@@ -1,0 +1,53 @@
+
+Downloads
+  1. Downoad MSYS2
+  2. pacman -S mingw-w64-x86_64-glfw mingw-w64-x86_64-glew # Install GLFW and GLEW via MSYS2
+  3. pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-glew mingw-w64-x86_64-glfw #Install extras. 
+  4. pacman -S base-devel mingw-w64-x86_64-toolchain                            #Extra c tool chain.
+  5. export PATH="/mingw64/bin:$PATH" #might need to do this. 
+
+  Verify Downloads  
+    1. ls /mingw64/include/GL/
+    2. Check compiler which gcc
+
+
+
+Adding to vs configurations
+  A. Make sure vs code detects new tools 
+    1. Ctrl+, terminal.integrated.profiles.windows, eit json. 
+      {
+        "terminal.integrated.profiles.windows": {
+            "MSYS2 MinGW64": {
+                "path": "C:\\msys64\\usr\\bin\\bash.exe",
+                "args": ["--login", "-i"],
+                "env": {
+                    "MSYSTEM": "MINGW64",
+                    "CHERE_INVOKING": "1"
+                }
+            }
+        },
+        "terminal.integrated.defaultProfile.windows": "MSYS2 MinGW64"
+      }
+  B. Add new terminalOptions! 
+    1. Ctrl+Shift+P → type "C/C++: Edit Configurations (UI), or click lang i think? 
+    2. .vscode/c_cpp_properties.json
+      {
+          "configurations": [
+              {
+                  "name": "Win32",
+                  "includePath": [
+                      "${workspaceFolder}/**",
+                      "C:/msys64/mingw64/include",
+                      "C:/msys64/mingw64/include/**"
+                  ],
+                  "defines": [],
+                  "compilerPath": "C:/msys64/mingw64/bin/gcc.exe",
+                  "cStandard": "c17",
+                  "cppStandard": "c++17",
+                  "intelliSenseMode": "gcc-x64"
+              }
+          ],
+          "version": 4
+      }
+  C. Add new default terminal
+    1. ctrl+shift+p: Terminal: Select Default Profile" → Choose "MSYS2"

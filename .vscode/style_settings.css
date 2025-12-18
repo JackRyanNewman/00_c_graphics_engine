@@ -1,0 +1,19 @@
+/* Custom CSS and JS Load
+  OPpen settings.json, and add "vscode_custom_css.imports": ["C:\Users\Kilic\Desktop\CS_Folders\MTH\.vscode\style_settings.css"]
+  It tells you can reset, and revert the supposed curroption! 
+
+*/
+
+.monaco-list-rows{
+  zoom: 110%;
+}
+
+/* Make Explorer/sidebar font bigger */
+/* .explorer-viewlet, .monaco-workbench .part.sidebar {
+    font-size: 14px;
+} */
+
+/* .monaco-tree .monaco-tree-row {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+} */
