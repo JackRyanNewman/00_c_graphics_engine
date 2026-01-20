@@ -1,0 +1,176 @@
+
+=============================================================================================================================
+Basic Eulers: https://en.wikipedia.org/wiki/Rotation_matrix
+  ------------------------------------------------------------------------------------------------------------------
+  --Orginal Equation
+    R = R_z(γ) R_y(β) R_x(α)
+    = [cosβ cosγ                          sinα sinβ cosγ - cosα sinγ          cosα sinβ cosγ + sinα sinγ    ]
+      [cosβ sinγ                          sinα sinβ sinγ + cosα cosγ          cosα sinβ sinγ - sinα cosγ    ]
+      [-sinβ                              sinα cosβ                           cosα cosβ                     ]
+  -------------------------------------------------------------------------------------------------------------------
+  --Rotation Notes
+    Update = Translation&Scale * Rotation.   
+      [ i1  0   0   X ]      [cosβ cosγ    sinα sinβ cosγ - cosα sinγ     cosα sinβ cosγ + sinα sinγ    0]
+      [ 0   i2  0   Y ]   *  [cosβ sinγ    sinα sinβ sinγ + cosα cosγ     cosα sinβ sinγ - sinα cosγ    0]
+      [ 0   0   i3  Z ]      [-sinβ        sinα cosβ                      cosα cosβ                     0]
+      [ 0   0   0   i4]      [0            0                              0                             1]
+
+    Update =
+      { i1*cosβ cosγ    i1*(sinα sinβ cosγ − cosα sinγ)    i1*(cosα sinβ cosγ + sinα sinγ)      X }
+      { i2*cosβ sinγ    i2*(sinα sinβ sinγ + cosα cosγ)    i2*(cosα sinβ sinγ − sinα cosγ)      Z }
+      { i3*(-sinβ)      i3*(sinα cosβ)                     i3*(cosα cosβ)                       Y }
+      { 0               0                                  0                                    1 }
+  -------------------------------------------------------------------------------------------------------------------
+  --Calculations
+    2. Rotation Matrix: 6 trig pre-comp, 13 multi, 2-precomp multi. 4 arth OPs 
+    3. Matrix multiplication: = 9 multi ops. 
+    Sub-Total = 24 Multi, 4 arith,  6 trig, 
+    = 1 trig =  6 multi, 11 arith, or 9 and 24.  
+    
+    Total BC = +36 multi, +66 airth, === 60multi, 70 arith. 130 opps. 
+    Total WC = +54 multi, +144 arith === 78multi, 148 aruth. 
+======================================================================================================================
+Rodrigues Rotation Formula (Arbitrary Axis Rotation): https://learnopengl.com/Getting-started/Transformations 
+--PROBLEM, 
+  If we want to keep speed changes by updating angle then thats ok! HOWEVER! THIS ASSUMES WE STATICALLY PUT IN A NORMALIZED X Y Z! 
+  IF we want to update with poor/incorrect interoplatation then we need to normilize the x y z
+  If we want to correctly interoplate, then we need to keep track of previous matrix*new matrix.... 
+          
+ ------------------------------------------------------------------------------------------------------------------
+ --Orginal Equation
+  Rotate by angle θ around arbitrary unit axis (Rx, Ry, Rz):
+    [ cosθ + Rx²(1-cosθ)       RxRy(1-cosθ) - Rzsinθ    RxRz(1-cosθ) + Rysinθ   0 ]
+    [ RxRy(1-cosθ) + Rzsinθ    cosθ + Ry²(1-cosθ)       RyRz(1-cosθ) - Rxsinθ   0 ]
+    [ RxRz(1-cosθ) - Rysinθ    RyRz(1-cosθ) + Rxsinθ    cosθ + Rz²(1-cosθ)      0 ]
+    [ 0                        0                        0                       1 ]
+ ------------------------------------------------------------------------------------------------------------------
+ --Updation and Normilization! 
+ void Transform_update(Transform* obj, float dt) {
+    // Axis-Angle rotation: quaternion.xyz = axis, quaternion.w = angle (radians)
+    
+    float len = sqrtf(obj->quaternion.x*obj->quaternion.x + obj->quaternion.y*obj->quaternion.y + obj->quaternion.z*obj->quaternion.z); //4 multi, 2 adds, sqrtf(is has hardware instruct): If vect, = 1 multi 2 airth
+    obj->quaternion.x /= len; obj->quaternion.y /= len; obj->quaternion.z /= len;                                                       // 3 multi. If vect, = 1 div
+    
+    obj->quaternion.w *=len                                                                                                             //1 multi
+    obj->quaternion.w += 1.0f * dt * len;                                    //Increment angle, rotation speed //(wraps to prevent infinite growth) //1 multi, 1 arith
+    if (obj->quaternion.w > 2.0f*M_PI) obj->quaternion.w -= 2.0f*M_PI; // Wrap angle between 0 and 2π to prevent accumulation                 //2 multi, 3 airth   
+   } //11 multi, 6 adds. Vector = 6 multi, 6 airth 
+  
+
+ ------------------------------------------------------------------------------------------------------------------
+ --Resuable Varibles and new matrix
+  [ Cθ + Rx2*OCθ         XY*OCθ - Rz*Sθ      XZ*OCθ + Ry*Sθ    0 ]
+  [ XY*OCθ + Rz*Sθ       Cθ + Ry2*OCθ        YZ*OCθ - Rx*Sθ    0 ]
+  [ XZ*OCθ - Ry*Sθ       YZ*OCθ + Rx*Sθ      Cθ + Rz2*OCθ      0 ]
+  [ 0                    0                   0                 1 ]
+    Cθ = cos(θ), Sθ = sin(θ), OCθ = 1 - Cθ   // Used 12 times, Used 6 times, 9 times
+    XY = Rx*Ry, XZ = Rx*Rz, YZ = Ry*Rz       // Used 3*2 times
+    Rx2 = Rx²,Ry2 = Ry², Rz2 = Rz²           // Used 1 time
+ ------------------------------------------------------------------------------------------------------------------
+ 
+ --Calculations
+  : Note 1 trig =  6 multi, 11 arith, or 9 and 24.  
+  : Update Speed + normilize: 11 multi, 6 arith
+  : Rotation Matrix: Precompute(2 trig, 3multi, 1 arith) 15(multi), 9 arith, = 2 trig, 18 multi, 10 airth
+  : Matrix mutplication: 9multi. 
+  
+  Sub-Total = 2 trig, 38 multi, 16 airth
+  : BC Trig = 12 multi, 22 arith 
+  : Wc trig = 18 multi, 48 airth
+  : Vect = -5
+
+  Total BC = 50 multi, 38 airth = 88 ops   - 5 = 83 ops
+  Total WC = 55 multi, 64 airth = 119 ops  - 5 = 114 ops
+  Proper interoplatation = this + matrix multplication... 
+   
+====================================================================================================================
+Quaternion Rotation Matrix (unit quaternion): Smooth and avoids gimble lock. 
+#VISUALIZER: https://tools.glowbuzzer.com/rotationconverter 
+  --------------------------------------------------------------------------------------------------------------------
+  --Matrix equation and resuabed varibles.
+    R(q) =
+    [ 1 − 2(y² + z²)     2(xy − wz)         2(xz + wy)        0 ]
+    [ 2(xy + wz)         1 − 2(x² + z²)     2(yz − wx)        0 ]
+    [ 2(xz − wy)         2(yz + wx)         1 − 2(x² + y²)    0 ]
+    [ 0                  0                  0                 1 ]
+      x2 = x², y2 = y², z2 = z²   // Used 6 times: 3
+      xy = x*y, xz = x*z          // Used 4 times: 2
+      yz = y*z, wx = w*x          // Used 4 times: 2
+      wy = w*y, wz = w*z          // Used 4 times: 2
+  --------------------------------------------------------------------------------------------------------------------
+  --Simplfied Matrix Eqaution
+    [ 1 − 2(y2 + z2)     2(xy − wz)         2(xz + wy)        0 ]
+    [ 2(xy + wz)         1 − 2(x2 + z2)     2(yz − wx)        0 ]
+    [ 2(xz − wy)         2(yz + wx)         1 − 2(x2 + y2)    0 ]
+    [ 0                  0                  0                 1 ]
+  --------------------------------------------------------------------------------------------------------------------
+  --Rotation Notes
+    Update = Translation & Scale * Rotation
+    [ i1  0   0   X ]      [ R00 R01 R02 0 ] =   { i1*R00   i1*R01   i1*R02   X }
+    [ 0   i2  0   Y ]   *  [ R10 R11 R12 0 ] =   { i2*R10   i2*R11   i2*R12   Y }
+    [ 0   0   i3  Z ]      [ R20 R21 R22 0 ]     { i3*R20   i3*R21   i3*R22   Z }
+    [ 0   0   0   i4]      [ 0   0   0   1 ]     { 0        0        0        1 }
+  -------------------------------------------------------------------------------------------------------------------
+  --Rotation quaternion_from_axis_angle: Angle  
+  //COULD MABYE BE VECTORIZED! 
+   Quaternion quaternion_from_axis_angle(Vec3 axis, float angle) {
+      Quaternion q;
+      float len = sqrtf(axis.x*axis.x + axis.y*axis.y + axis.z*axis.z); //4 multi, 2 adds, sqrtf(is has hardware instruct): If vect, = 1 multi 2 airth
+      axis.x /= len; axis.y /= len;  axis.z /= len;                     // 3 multi. If vect, = 1 div
+      float half_angle = angle * 0.5f;                                  // 1 multi
+      float s = sinf(half_angle);                                       // 1 trig. 
+      q.x = axis.x * s; q.y = axis.y * s; q.z = axis.z * s;             //3 multi  If vect, = 1 div. 
+      q.w = cosf(half_angle);                                           //1 trig.
+      return q;
+    } // 11 multi, 2 trig(12 multi, 22 arith), 2 airth
+      // 4 multi, , 2 trig(12 multi, 22 arith), 2 airth
+  -------------------------------------------------------------------------------------------------------------------
+  --Rotation multpliy. 
+    Quaternion quaternion_multiply(Quaternion a, Quaternion b) {
+        Quaternion result;
+        result.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;
+        result.x = a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y;
+        result.y = a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x;
+        result.z = a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w;
+        
+        return result;
+    } //16 multis, 12 arith. 
+  -------------------------------------------------------------------------------------------------------------------
+  --Rotation normilize. 
+   Quaternion quaternion_normalize(Quaternion q) {
+    
+      float len = sqrtf(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w); //4 multi, 2 adds, sqrtf(is has hardware instruct): If vect, = 1 multi 2 airth
+      q.x /= len; q.y /= len; q.z /= len; q.w /= len;           // 3 multi. If vect, = 1 div
+    return q;
+   }
+ -------------------------------------------------------------------------------------------------------------------
+ = 1 trig =  6 multi, 11 arith, or 9 and 24.  
+ --Calculations: 
+  : Normilization is 8 multi, 3 add, 1 math: Optional.. 
+  
+  : New angle:           3 multi,  5 artih
+  : Axis angle:          23 multi, 24 airth,        v=16 mulit, 24 arith: This is on the fly. This could be static... 
+  : quaternion_multiply: 16 multis, 12 airth        //Could poetinally be reduce to 10. 
+  : Rotation Matrix: 9-precomputed: 9 multi, 12 arith 
+  : Rotation Multi_: 9 multi.  
+
+  
+  
+  : Just update speed: new+angle + Axis+Angle + Rotation Matrix+ Rotation Multi: 
+    No Vector            : 53 multi, 41 airith. 94 ops. 
+    Yes Vector Axis      : 45 multi, 41 airith. 87 ops.
+   
+
+Fully correct! 
+  : Dynamic Axis angle       totals:    69 multi,  53 airth = 110 ops. -(7+7)     = 104 ops ==
+  : Precalcualted Axis Angle-totals:    46 multis, 29 airth = 67 ops.  -6         = 68 ops == 
+  
+
+
+
+
+
+
+
+
+

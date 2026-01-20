@@ -132,6 +132,10 @@ float room_vertices[] = {
 
 Mesh Room_Mesh = {
     .vao = 0, .vbo = 0, .ebo = 0,
+    .vertex_count = 24 * 6,  // 24 vertices * 6 floats each
+    .index_count = 36,
+
+    //These straight up could be forgotten? 
     .vertices = room_vertices,
     .indices = (unsigned int[]){
         // Floor (inverted so you see it from inside)
@@ -147,6 +151,4 @@ Mesh Room_Mesh = {
         // Right wall
         20, 22, 21,  22, 20, 23,
     },
-    .vertex_count = 24 * 6,  // 24 vertices * 6 floats each
-    .index_count = 36,
 };

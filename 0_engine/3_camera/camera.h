@@ -37,6 +37,8 @@
   /* ========== Camera Control ========== */
   void camera_set_distance(float distance);
   float camera_get_distance();
+  Vec3 camera_get_eye();
+  void camera_set_eye(Vec3 new_eye);
 
 /*=================================================================================================*/
 /* MACROS */

@@ -5,14 +5,6 @@
 #ifndef MATH3D_H
 #define MATH3D_H
 #include <math.h>
-#include <stdint.h>
-
-
-
-
-
-
-
 
 /*=================================================================================================*/
 /* Defines */
@@ -25,9 +17,7 @@
 typedef struct Vec3{
     float x, y, z;
 } Vec3;
-typedef struct Vec4{
-    float x, y, z, w;
-} Vec4;
+
 
 typedef struct Mat4 {
     float m[16];  // Column-major 4x4 matrix
@@ -37,25 +27,25 @@ typedef struct Mat4 {
 /* Global Variables */
 /* None */
 
-
 /*=================================================================================================*/
 /* Forward Declarations */
 
   /*=========================================================================*/
   /* ========== Matrix Creation ========== */
-  Mat4 mat4_identity(Vec3 position);
-  Mat4 mat4_unique_identity(Vec3 position, Vec3 translation);
-  Mat4 mat4_rotate(Vec3 scale, Vec3 position, Vec4 quaternion);
+  Mat4 mat4_identity();
   Mat4 mat4_perspective(float fov, float aspect, float near_plane, float far_plane);
   Mat4 mat4_look_at(Vec3 eye, Vec3 center, Vec3 up);
-  
-  float xoroshiro128_next_range(float min, float max);
-	uint64_t xoroshiro128_next(); //need to figure out how to inline?? 
+
   /*=========================================================================*/
   /* ========== Transformations ========== */
+  Mat4 mat4_translate(Vec3 translation);
+  Mat4 mat4_rotate_x(float angle);
+  Mat4 mat4_rotate_y(float angle);
+  Mat4 mat4_rotate_z(float angle);
+
   /*=========================================================================*/
   /* ========== Matrix Operations ========== */
-  
+  Mat4 mat4_multiply(Mat4 a, Mat4 b);
 
 /*=================================================================================================*/
 /* MACROS */

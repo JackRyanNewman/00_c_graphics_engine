@@ -1,0 +1,38 @@
+1. How you know if the GPU hoists a uniform multiply
+
+When you write:
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
+
+gl_Position = projection * view * model * vec4(aPos, 1.0);
+
+
+projection and view are uniforms, i.e., constants for the draw call.
+
+Modern GPU drivers (NVIDIA, AMD, Intel) will often analyze the shader and precompute projection * view once per draw call, then multiply it by model per vertex.
+
+But: this is not guaranteed by the OpenGL spec. The compiler might or might not hoist it depending on:
+
+Driver version and vendor
+
+Shader complexity
+
+Instruction scheduling
+
+Other optimizations
+
+The only way to know for sure is to:
+
+Compile the shader with the driver and capture the GPU assembly using tools:
+
+NVIDIA: nvprof, Nsight, nvdisasm
+
+AMD: Radeon GPU Profiler
+
+Intel: Intel Graphics Performance Analyzers
+
+Look for a single multiply per vertex vs two multiplies per vertex.
+
+Most practical engines assume the driver does the optimization, but for critical paths, engineers verify with profiling.

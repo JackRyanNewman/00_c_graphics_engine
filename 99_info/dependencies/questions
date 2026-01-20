@@ -1,0 +1,6 @@
+
+Orginzational List? 
+  SHADERS might be more optimized to run through objects multplie times, instead of making unique combinations of shaders? Or there should be general Shading groups?? 
+
+GPU switching 
+  renderer_render_frame(): glBindVertexArray(curr_scene[ob].parent_mesh->vao); //!!!!!!!!!!!!!!!!IS IT MORE Compuetionally EXPENSIVE to switch between VertexArrays? 

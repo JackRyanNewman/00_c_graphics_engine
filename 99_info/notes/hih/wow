@@ -1,0 +1,9 @@
+4. Practical constraints
+
+SIMD vectorization works best for batches of similar-magnitude values, because the quadrant/sign logic is simpler.
+
+For huge angles spread across different quadrants, scalar might actually be easier or just as fast.
+
+Most libraries (Intel SVML, MKL, ARM math) implement vectorized cosine for arrays, but single-value cos just calls the scalar kernel.
+
+???

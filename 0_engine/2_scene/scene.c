@@ -17,7 +17,7 @@
 
 /*=================================================================================================*/
 /* Internal State */
-static Vec3 base_rotation = {1,1,1}; 
+//static Vec3 base_rotation = {1,1,1}; 
 Transform **Rotating_Objects; int total_rotating;  //Array of objects that move.
  
 
@@ -33,21 +33,25 @@ void scene_update(float dt) {
 }
 
 void Transform_update(Transform* obj, float dt) {
-    // Update rotation based on rotation speed
-    obj->rotation.x += base_rotation.x * dt; 
-    obj->rotation.y += base_rotation.y * dt;
-    obj->rotation.z += base_rotation.z * dt;
+    // Axis-Angle rotation: quaternion.xyz = axis, quaternion.w = angle (radians)
+    
+    // Define rotation axis (normalized unit vector)
+    // This stays constant - we're rotating around a fixed axis
+    obj->quaternion.x = 1.0f;  // X-axis
+    obj->quaternion.y = 0.0f;  // 0 contribution
+    obj->quaternion.z = 0.0f;  // 0 contribution
+
+    float len = sqrtf(obj->quaternion.x*obj->quaternion.x + obj->quaternion.y*obj->quaternion.y + obj->quaternion.z*obj->quaternion.z);
+    obj->quaternion.x /= len; obj->quaternion.y /= len; obj->quaternion.z /= len;
+    
+    obj->quaternion.w += 1.0f * dt;                                    //Increment angle, rotation speed //(wraps to prevent infinite growth)
+    if (obj->quaternion.w > 2.0f*M_PI) obj->quaternion.w -= 2.0f*M_PI; // Wrap angle between 0 and 2π to prevent accumulation
+    
 }
 
 Mat4 Transform_get_model_matrix(Transform* obj) {
-    // Only translastion and rotation - scale already baked into vertices
-    Mat4 translation = mat4_translate(obj->position);
-    Mat4 rot_x = mat4_rotate_x(obj->rotation.x);
-    Mat4 rot_y = mat4_rotate_y(obj->rotation.y);
-    Mat4 rot_z = mat4_rotate_z(obj->rotation.z);
-    Mat4 rotation = mat4_multiply(rot_z, mat4_multiply(rot_y, rot_x));
-    
-    return mat4_multiply(translation, rotation);
+    // Build transformation matrix from position, quaternion, and scale
+    return mat4_rotate(obj->scale, obj->position, obj->quaternion);
 }
 
 void scene_cleanup() {}
@@ -59,10 +63,10 @@ void scene_cleanup() {}
 Rendered_Object* scene_1(int* total_objs, Mesh*** mesh_lst, int* num_meshes, Material*** mat_lst, int* num_mats){
     // Static transforms (rotating objects)
     
-    static Transform walls = { .actions=NULL, .position={0, 0, 0},  .rotation={0, 0, 0}, .scale={1, 1, 1} };
-    static Transform obj_1 = { .actions=NULL, .position={2, 0, 0},  .rotation={0, 0, 0}, .scale={1, 1, 1} };
-    static Transform obj_2 = { .actions=NULL, .position={-2, 0, 0}, .rotation={0, 0, 0}, .scale={1, 1, 1} };
-    static Transform obj_3 = { .actions=NULL, .position={0, 2, 0},  .rotation={0, 0, 0}, .scale={1, 1, 1} };
+     static Transform walls = { .actions=NULL, .position={0, 0, 0},  .scale={1, 1, 1}, .quaternion={0, 0, 0, 1} };
+     static Transform obj_1 = { .actions=NULL, .position={2, 0, 0},  .scale={1, 1, 1}, .quaternion={0, 0, 0, 1} };
+     static Transform obj_2 = { .actions=NULL, .position={-2, 0, 0}, .scale={1, 1, 1}, .quaternion={0, 0, 0, 1} };
+     static Transform obj_3 = { .actions=NULL, .position={0, 2, 0},  .scale={1, 1, 1}, .quaternion={0, 0, 0, 1} };
 
     // All meshes used in the scene
     static Mesh* meshes[] = { &Room_Mesh, &Wire_Cube, &Full_Diamond, &Wire_Diamond };
@@ -81,50 +85,16 @@ Rendered_Object* scene_1(int* total_objs, Mesh*** mesh_lst, int* num_meshes, Mat
         { .parent_mesh = &Full_Diamond,   .material = &Base_Color, .transform = &obj_2, .draw_mode = GL_TRIANGLES },
         { .parent_mesh = &Wire_Diamond,   .material = &Base_Color, .transform = &obj_3, .draw_mode = GL_LINES }
     };
+    
     *total_objs = sizeof(scene)/sizeof(scene[0]);
-    apply_scale_to_meshes(scene, *total_objs, meshes, *num_meshes);
     static Transform* rotating[] = { &obj_1, &obj_2, &obj_3 };
     total_rotating = sizeof(rotating)/sizeof(rotating[0]);
+
+
     Rotating_Objects = rotating;
 
     return scene;
 
-}
-
-void apply_scale_to_meshes(Rendered_Object* scene, int num_objs, Mesh** meshes, int num_meshes) {
-    // Track which meshes we've already scaled (avoid scaling the same mesh multiple times)
-    int scaled[num_meshes];
-    for (int i = 0; i < num_meshes; i++) scaled[i] = 0;
-    
-    // For each object in the scene
-    for (int obj_idx = 0; obj_idx < num_objs; obj_idx++) {
-        Rendered_Object* obj = &scene[obj_idx];
-        Mesh* mesh = (Mesh*)obj->parent_mesh;
-        Vec3 scale = obj->transform->scale;
-        
-        // Find which mesh index this is
-        int mesh_idx = -1;
-        for (int m = 0; m < num_meshes; m++) {
-            if (meshes[m] == mesh) {
-                mesh_idx = m;
-                break;
-            }
-        }
-        
-        // Skip if we already scaled this mesh or if scale is default (1,1,1)
-        if (mesh_idx == -1 || scaled[mesh_idx]) continue;
-        if (scale.x == 1.0f && scale.y == 1.0f && scale.z == 1.0f) continue;
-        
-        // Apply scale to all vertices in this mesh
-        for (size_t i = 0; i < mesh->vertex_count; i += 6) {
-            mesh->vertices[i + 0] *= scale.x;  // Position X
-            mesh->vertices[i + 1] *= scale.y;  // Position Y
-            mesh->vertices[i + 2] *= scale.z;  // Position Z
-            // Colors stay the same (indices 3, 4, 5)
-        }
-        
-        scaled[mesh_idx] = 1;
-    }
 }
 
 

@@ -42,6 +42,10 @@ static Vec3 up;
 	void camera_set_distance(float distance) { camera_distance = distance;}
 	Mat4 camera_get_view_matrix() {return mat4_look_at(eye, center, up);}
 	Mat4 camera_get_projection_matrix() { return mat4_perspective(fov, aspect, near_plane, far_plane);}
+	
+	void camera_set_eye(Vec3 new_eye) { eye = new_eye; } // Update camera position
+	Vec3 camera_get_eye() { return eye;}  // Return current camera position
+
 
 /*=================================================================================================*/
 /* Camera Control */

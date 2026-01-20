@@ -10,6 +10,7 @@
 #include "../1_renderer/renderer.h"
 #include "../4_input/input.h"
 #include "../6_debugger/debugger.h"
+#include "../3_camera/camera.h"
 
 /*=================================================================================================*/
 /* Internal State */
@@ -52,33 +53,53 @@ bool engine_init_backend(){
     return 1;
 }
 
+
 void engine_run() {
     if (DEBUG_MODE) printf("* Start engine\n");
     
+    // Enable VSync - locks frame rate to monitor refresh rate (60Hz, 144Hz, etc.)
+    glfwSwapInterval(1);  // 1 = vsync enabled, 0 = vsync disabled
     
-    if (DEBUG_MODE) printf("* Start engine\n");
-    double last_time = glfwGetTime();
+    double last_time = glfwGetTime();  // Time of previous frame (seconds since startup)
 
     do {
-        double now = glfwGetTime();
-        double dt = now - last_time;
-        last_time = now;
+        double now = glfwGetTime();    // Current time (seconds since startup)
+        double dt = now - last_time;   // Delta time = elapsed seconds since last frame
+        last_time = now;               // Update for next iteration
 
         // Cap dt to prevent huge jumps (e.g., if window was dragged)
-        if (dt > 0.1) dt = 0.1;  // Max 100ms per frame
+        if (dt > 0.1) dt = 0.1;        // Max 100ms per frame (prevents large dt spikes)
         
-        scene_update((float)dt);
-        renderer_render_frame();
+        // Handle WASD camera movement
+        float move_speed = 1.0f;       // Units per second
+        float move_distance = move_speed * (float)dt;  // Distance to move this frame
+        
+        Vec3 current_eye = camera_get_eye();
+        // W = Move forward(toward center), Move closer to center (z decreases)
+        // S = Move backward (away from center) Move away from center (z increases)
+        if (glfwGetKey(engine_get_window(), GLFW_KEY_W) == GLFW_PRESS) current_eye.z -= move_distance;
+        if (glfwGetKey(engine_get_window(), GLFW_KEY_S) == GLFW_PRESS) current_eye.z += move_distance;
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        // A = Move left  Move left (x decreases)
+        // D = Move right Move right (x increases)
+        if (glfwGetKey(engine_get_window(), GLFW_KEY_A) == GLFW_PRESS) {
+            current_eye.x -= move_distance;
+        }
+        if (glfwGetKey(engine_get_window(), GLFW_KEY_D) == GLFW_PRESS) current_eye.x += move_distance;
+        
+        camera_set_eye(current_eye);
+        
+        scene_update((float)dt);       // Pass dt so movement/physics scale with real time
+        renderer_render_frame();       // Render the scene
 
-    } while (!glfwWindowShouldClose(window));
-       
-  
+        glfwSwapBuffers(window);       // Display frame (blocks until vsync if enabled)
+        glfwPollEvents();              // Check for keyboard/mouse input
+
+    } while (!glfwWindowShouldClose(window));  // Loop until window close requested
     
-    
+    if (DEBUG_MODE) printf("* Engine stopped\n");
 }
+
 
 //Waiting options
 // - glfwWaitEvents(); waits until IO eeveent? thread block. 

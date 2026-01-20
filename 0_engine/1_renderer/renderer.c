@@ -15,9 +15,12 @@
 
 /*=================================================================================================*/
 /* Internal State */
+
+//Rendered Objects should be list organized. 
 static Rendered_Object* curr_scene; static int num_objs;    //Array of Rendered Objects
-static Mesh** mesh_lst; static int num_meshes;             //Array holding all all meshes
 static Material** mat_lst; static int num_mats;             //Array holding all materials
+static Mesh** mesh_lst; static int num_meshes;              //Array holding all parent meshes
+
 
 /*=================================================================================================*/
 /* Renderer Lifecycle: Used by engine */
@@ -75,7 +78,7 @@ static Material** mat_lst; static int num_mats;             //Array holding all 
                     glDeleteProgram(program);
                     return 0;
                 }  
-                glAttachShader(program, shader); // Attach the compiled shader
+                glAttachShader(program, shader); // Attach the compiled shader to progam !! 
                 shaders[i] = shader;
             }
         //Check linking status and handle errors
@@ -96,7 +99,11 @@ static Material** mat_lst; static int num_mats;             //Array holding all 
     }
 
     GLuint shader_compile(GLenum type, const char* source) {               
-    // Compile a single shader of given type
+        //The GPU takes your GLSL source and generates machine code for vertex, fragment, etc. shaders.
+        //At this point, uniforms do not have values yet. The shader code just has placeholders for them.
+        //Using the shader
+     
+        // Compile a single shader of given type
         GLuint shader = glCreateShader(type);                               // Create shader object on GPU
         glShaderSource(shader, 1, &source, NULL);                           // Set the source code of the shader
         glCompileShader(shader);                                            // Compile the shader
@@ -147,14 +154,24 @@ static Material** mat_lst; static int num_mats;             //Array holding all 
 
 /*=================================================================================================*/
 /* Renderer Lifecycle: Used by engine */
+
+
+//CPU:   Update Cyle: Ordered Threaded List of updates* This could theotrically run while Matrix Multplications occur. With reasource deadlocks!/ 
+//Matrix Update Cyle: Shaders top -> 
+
+
+
+
+
 void renderer_render_frame() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     Mat4 projection = camera_get_projection_matrix();
     Mat4 view = camera_get_view_matrix();
     
-    GLuint current_shader = 0;
     GLint view_loc, proj_loc, model_loc;
+    GLuint current_shader = 0;
+    
     
     for(int ob = 0; ob < num_objs; ob++){
         GLuint shader_program = curr_scene[ob].material->material;
@@ -163,27 +180,45 @@ void renderer_render_frame() {
         if(shader_program != current_shader) {
             current_shader = shader_program;
             glUseProgram(shader_program);
+            //Tells OpenGL which compiled program is active for subsequent !draw calls!.
+            //The GPU knows where to read/write uniform and attribute locations.
             
+            //Gets the uniforms locations! 
             view_loc = glGetUniformLocation(shader_program, "view");
             proj_loc = glGetUniformLocation(shader_program, "projection");
             model_loc = glGetUniformLocation(shader_program, "model");
             
+            
             // Set view and projection (same for all objects with this shader)
+                //It simply writes data (the 16 floats of your matrix) into the GPU’s memory reserved for that uniform variable.
+                //Each uniform is essentially a constant value for the current draw call.
             glUniformMatrix4fv(view_loc, 1, GL_FALSE, view.m);
             glUniformMatrix4fv(proj_loc, 1, GL_FALSE, projection.m);
         }
         
         // Bind mesh and set model matrix (changes per object)
-        glBindVertexArray(curr_scene[ob].parent_mesh->vao);
+        glBindVertexArray(curr_scene[ob].parent_mesh->vao); 
         Mat4 model = Transform_get_model_matrix(curr_scene[ob].transform);
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, model.m);
+        glUniformMatrix4fv(model_loc, 1, GL_FALSE, model.m); //COULD you feed it pointers just to have large array at one point? Who knows? 
+        //Move by increments of 16? Its not like its going to have undefined behaviors? I think your just passing the starting pointer? 
         
         // Draw
         glDrawElements(curr_scene[ob].draw_mode, (GLsizei)curr_scene[ob].parent_mesh->index_count, GL_UNSIGNED_INT, 0);
+        ///ARRE WE USING THE EBO? Also, apparenlty we pass in index arrays to dymnically declare what we want to be drawn or not? Doesnt that mean we could diclsude stuf.. 
+
     }
     
     glBindVertexArray(0);
 }
+//OPTIMIZATION! 
+//  A note on shaders: this is executed per vertex. 
+//  gl_Position = projection * view * model * vertex_position
+// The GPU compiler can do some optimizations:
+//     If it sees projection * view are uniforms (and never change within a draw call), it can hoist that multiplication and compute PV = projection * view once per draw call internally.
+//     You, as the programmer, don’t need to do it, but the compiler may do it automatically.
+
+//Optimization: Would be precomputing Projection*View.. Poetinally * Model(If it has enough vertices!) Digging into if multplifying by model is a good question though. 
+
 
 
 
